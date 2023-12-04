@@ -13,7 +13,6 @@ int main() {
 
 	int result = 0;
 	for (int i = 0; content.count > 0; ++i) {
-		content = StringView_TrimLeft(content);
 		StringView sv = StringView_TakeLine(&content);
 
 		if (sv.count == 0) {

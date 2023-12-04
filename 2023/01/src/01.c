@@ -3,17 +3,16 @@
 #include "util.h"
 
 int main() {
-	StringBuffer buf = {0};
-	if (!ReadEntireFile("input/01.txt", &buf)) { return 1; }
+	StringBuffer file = {0};
+	if (!ReadEntireFile("input/01.txt", &file)) { return 1; }
 
 	StringView content = {
-		.data = buf.data,
-		.count = buf.count,
+		.data  = file.data,
+		.count = file.count,
 	};
 
 	int result = 0;
 	for (int i = 0; content.count > 0; ++i) {
-		content = StringView_TrimLeft(content);
 		StringView sv = StringView_TakeLine(&content);
 
 		if (sv.count == 0) {

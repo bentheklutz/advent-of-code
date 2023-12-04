@@ -83,16 +83,24 @@ StringView StringView_TakeLine(StringView *str) {
 
 	line.data = str->data;
 
+	bool had_carriage_return = false;
 	for (size_t i = 0; i < str->count; ++i) {
 		if (line.data[i] == '\n') {
-			if (i && line.data[i-1] == '\r') { line.count -= 1; }
+			if (i && line.data[i-1] == '\r') { had_carriage_return = true; }
 			break;
 		}
 		line.count += 1;
 	}
 
-	str->data  += line.count;
-	str->count -= line.count;
+	if (line.count == str->count) {
+		str->data += line.count;
+		str->count -= line.count;
+	} else {
+		str->data  += line.count + 1;
+		str->count -= line.count + 1;
+	}
+
+	if (had_carriage_return) { line.count -= 1; }
 
 	return line;
 }
