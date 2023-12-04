@@ -23,7 +23,6 @@ int main() {
 	int result = 0;
 
 	for (int i = 0; contents.count > 0; ++i) {
-		contents = StringView_TrimLeft(contents);
 		if (contents.count == 0) { break; }
 
 		StringView line = StringView_TakeLine(&contents);
