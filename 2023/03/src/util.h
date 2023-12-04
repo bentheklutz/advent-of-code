@@ -18,6 +18,28 @@ typedef struct StringView {
 	size_t count;
 } StringView;
 
+#define SV_FMT "%.*s"
+#define SV_ARG(sv) (int)((sv).count), (sv).data
+typedef struct DynArray {
+	void   *data;
+	size_t count;
+	size_t capacity;
+} DynArray;
+
+#define DYNARRAY_INIT_CAP 1024
+
+#define DynArray_Add(da, item)                                                    \
+	{                                                                             \
+		if ((da)->count == (da)->capacity) {                                      \
+			(da)->capacity = (da)->capacity ?                                     \
+				(da)->capacity*2                                                  \
+				: DYNARRAY_INIT_CAP;                                              \
+			(da)->data = realloc((da)->data, (da)->capacity*sizeof(item));                     \
+		}                                                                         \
+		memcpy((char *)(da)->data+(da)->count*sizeof(item), &item, sizeof(item)); \
+		(da)->count += 1;                                                         \
+	}
+
 bool ReadEntireFile(const char *file_path, StringBuffer *buf) {
 	bool result = false;
 
@@ -83,16 +105,25 @@ StringView StringView_TakeLine(StringView *str) {
 
 	line.data = str->data;
 
+	bool had_carriage_return = false;
 	for (size_t i = 0; i < str->count; ++i) {
 		if (line.data[i] == '\n') {
-			if (i && line.data[i-1] == '\r') { line.count -= 1; }
+			if (i && line.data[i-1] == '\r') { had_carriage_return = true; }
 			break;
 		}
 		line.count += 1;
 	}
 
-	str->data  += line.count;
-	str->count -= line.count;
+	// Skip past the matched newline if it exists
+	if (line.count < str->count) {
+		str->data += line.count + 1;
+		str->count -= line.count + 1;
+	} else {
+		str->data  += line.count;
+		str->count -= line.count;
+	}
+
+	if (had_carriage_return) { line.count -= 1; }
 
 	return line;
 }
@@ -120,4 +151,68 @@ StringView StringView_SplitOn(StringView *str, char delimiter) {
 	}
 
 	return result;
+}
+
+void StringView_Eat(StringView *str, char character) {
+	if (!str || !str->data || !str->count) { return; }
+
+	for (size_t i = 0; i < str->count; ++i) {
+		if (*(str->data) != character) { break; }
+		str->count -= 1;
+		str->data += 1;
+	}
+}
+
+DynArray StringView_Lines(StringView str) {
+	DynArray arr = {0};
+	for (int i = 0; str.count > 0; ++i) {
+		StringView line = StringView_TakeLine(&str);
+		DynArray_Add(&arr, line);
+	}
+	return arr;
+}
+
+DynArray StringView_TakeNumbers(StringView str) {
+	DynArray arr = {0};
+	StringView current = {0};
+	bool in_number = false;
+	for (int i = 0; str.count > 0; ++i) {
+		if (in_number) {
+			if (str.data[0] >= '0' && str.data[0] <= '9') {
+				current.count += 1;
+			} else {
+				DynArray_Add(&arr, current);
+				current.data = 0x0;
+				current.count = 0;
+				in_number = false;
+			}
+		} else {
+			if (str.data[0] >= '0' && str.data[0] <= '9') {
+				in_number = true;
+				current.data = str.data;
+				current.count += 1;
+			}
+		}
+		str.data  += 1;
+		str.count -= 1;
+	}
+	if (in_number) {
+		DynArray_Add(&arr, current);
+	}
+	return arr;
+}
+
+DynArray StringView_TakeSymbols(StringView str) {
+	DynArray arr = {0};
+	StringView current = {0};
+	for (int i = 0; str.count > 0; ++i) {
+		if (str.data[0] != '.' && !(str.data[0] >= '0' && str.data[0] <= '9')) {
+			current.data = str.data;
+			current.count = 1;
+			DynArray_Add(&arr, current);
+		}
+		str.data  += 1;
+		str.count -= 1;
+	}
+	return arr;
 }
