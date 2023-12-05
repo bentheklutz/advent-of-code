@@ -1,22 +1,11 @@
 #include <stdio.h>
 #include "util.h"
 
-typedef enum TokenType {
-	TT_Unknown,
-	TT_Symbol,
-	TT_Number,
-} TokenType;
+const char *example_path = "input/example.txt";
+const char *default_path = "input/04.txt";
 
-typedef struct Token {
-	TokenType type;
-	StringView str;
-} Token;
-
-char *example_path = "input/example.txt";
-char *default_path = "input/04.txt";
-
-char *DetermineInputPath(int argc, char **argv) {
-	char *input_path = default_path;
+const char *DetermineInputPath(int argc, char **argv) {
+	const char *input_path = default_path;
 	if (argc > 1) {
 		if (strncmp(argv[1], "-e", 2) == 0 ||
 		    strncmp(argv[1], "--example", 9) == 0) {
