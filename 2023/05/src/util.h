@@ -28,7 +28,9 @@ typedef struct DynArray {
 
 #define DYNARRAY_INIT_CAP 1024
 
-#define DynArray_Add(da, item)                                                    \
+#define dyn_array_as_type(da, T) ((T *)(da).data)
+
+#define dyn_array_add(da, item)                                                    \
 	{                                                                             \
 		if ((da)->count == (da)->capacity) {                                      \
 			(da)->capacity = (da)->capacity ?                                     \
@@ -40,7 +42,7 @@ typedef struct DynArray {
 		(da)->count += 1;                                                         \
 	}
 
-bool ReadEntireFile(const char *file_path, StringBuffer *buf) {
+bool read_entire_file(const char *file_path, StringBuffer *buf) {
 	bool result = false;
 
 	if (!buf) { return result; }
@@ -80,7 +82,7 @@ bool ReadEntireFile(const char *file_path, StringBuffer *buf) {
 	return result;
 }
 
-StringView StringView_TrimLeft(StringView str) {
+StringView string_view_trim_left(StringView str) {
 	StringView result = {0};
 	if (!str.data) { return result; }
 
@@ -98,7 +100,7 @@ StringView StringView_TrimLeft(StringView str) {
 	return result;
 }
 
-StringView StringView_TakeLine(StringView *str) {
+StringView string_view_take_line(StringView *str) {
 	StringView line = {0};
 
 	if (!str || !str->data || !str->count) { return line; }
@@ -128,7 +130,7 @@ StringView StringView_TakeLine(StringView *str) {
 	return line;
 }
 
-StringView StringView_SplitOn(StringView *str, char delimiter) {
+StringView string_view_split_on(StringView *str, char delimiter) {
 	StringView result = {0};
 
 	if (!str || !str->data || !str->count) { return result; }
@@ -153,7 +155,7 @@ StringView StringView_SplitOn(StringView *str, char delimiter) {
 	return result;
 }
 
-void StringView_Eat(StringView *str, char character) {
+void string_view_eat(StringView *str, char character) {
 	if (!str || !str->data || !str->count) { return; }
 
 	for (size_t i = 0; i < str->count; ++i) {
@@ -163,16 +165,16 @@ void StringView_Eat(StringView *str, char character) {
 	}
 }
 
-DynArray StringView_Lines(StringView str) {
+DynArray string_view_lines(StringView str) {
 	DynArray arr = {0};
 	for (int i = 0; str.count > 0; ++i) {
-		StringView line = StringView_TakeLine(&str);
-		DynArray_Add(&arr, line);
+		StringView line = string_view_take_line(&str);
+		dyn_array_add(&arr, line);
 	}
 	return arr;
 }
 
-DynArray StringView_TakeNumbers(StringView str) {
+DynArray string_view_take_numbers(StringView str) {
 	DynArray arr = {0};
 	StringView current = {0};
 	bool in_number = false;
@@ -181,7 +183,7 @@ DynArray StringView_TakeNumbers(StringView str) {
 			if (str.data[0] >= '0' && str.data[0] <= '9') {
 				current.count += 1;
 			} else {
-				DynArray_Add(&arr, current);
+				dyn_array_add(&arr, current);
 				current.data = 0x0;
 				current.count = 0;
 				in_number = false;
@@ -197,19 +199,51 @@ DynArray StringView_TakeNumbers(StringView str) {
 		str.count -= 1;
 	}
 	if (in_number) {
-		DynArray_Add(&arr, current);
+		dyn_array_add(&arr, current);
 	}
 	return arr;
 }
 
-DynArray StringView_TakeSymbols(StringView str) {
+DynArray string_view_parse_numbers(StringView str) {
+	DynArray arr = {0};
+	StringView current = {0};
+	bool in_number = false;
+	for (int i = 0; str.count > 0; ++i) {
+		if (in_number) {
+			if (str.data[0] >= '0' && str.data[0] <= '9') {
+				current.count += 1;
+			} else {
+				long number = strtoll(current.data, 0x0, 10);
+				dyn_array_add(&arr, number);
+				current.data = 0x0;
+				current.count = 0;
+				in_number = false;
+			}
+		} else {
+			if (str.data[0] >= '0' && str.data[0] <= '9') {
+				in_number = true;
+				current.data = str.data;
+				current.count += 1;
+			}
+		}
+		str.data  += 1;
+		str.count -= 1;
+	}
+	if (in_number) {
+		long number = strtoll(current.data, 0x0, 10);
+		dyn_array_add(&arr, number);
+	}
+	return arr;
+}
+
+DynArray string_view_take_symbols(StringView str) {
 	DynArray arr = {0};
 	StringView current = {0};
 	for (int i = 0; str.count > 0; ++i) {
 		if (str.data[0] != '.' && !(str.data[0] >= '0' && str.data[0] <= '9')) {
 			current.data = str.data;
 			current.count = 1;
-			DynArray_Add(&arr, current);
+			dyn_array_add(&arr, current);
 		}
 		str.data  += 1;
 		str.count -= 1;
