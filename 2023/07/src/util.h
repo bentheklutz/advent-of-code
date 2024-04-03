@@ -31,7 +31,7 @@ typedef struct DynArray {
 #define dyn_array_as_type(da, T) ((T *)(da).data)
 
 #define dyn_array_add(da, item)                                                    \
-	{                                                                             \
+	do {                                                                             \
 		if ((da)->count == (da)->capacity) {                                      \
 			(da)->capacity = (da)->capacity ?                                     \
 				(da)->capacity*2                                                  \
@@ -40,7 +40,22 @@ typedef struct DynArray {
 		}                                                                         \
 		memcpy((char *)(da)->data+(da)->count*sizeof(item), &item, sizeof(item)); \
 		(da)->count += 1;                                                         \
-	}
+	} while (0)
+
+
+// Hand *elems = (Hand *)((&hands_da)->data);
+// if ((lowest_score_index) <= ((&hands_da)->count)) {
+// 	memmove(elems+lowest_score_index, elems+lowest_score_index+1, ((&hands_da)->count - lowest_score_index-1)*sizeof(Hand));
+// 	(&hands_da)->count -= 1;
+// }
+#define dyn_array_remove(da, idx, T)                                               \
+	do {                                                                           \
+		T *elems = (T *)((da)->data);                                              \
+		if ((idx) <= ((da)->count)) {                                              \
+			memmove(elems+idx, elems+idx+1, ((da)->count - idx-1)*sizeof(T));      \
+			(da)->count -= 1;                                                      \
+		}                                                                          \
+	} while (0)
 
 bool read_entire_file(const char *file_path, StringBuffer *buf) {
 	bool result = false;
@@ -167,7 +182,7 @@ void string_view_eat(StringView *str, char character) {
 
 DynArray string_view_lines(StringView str) {
 	DynArray arr = {0};
-	for (int i = 0; str.count > 0; ++i) {
+	for (; str.count > 0;) {
 		StringView line = string_view_take_line(&str);
 		dyn_array_add(&arr, line);
 	}
@@ -178,7 +193,7 @@ DynArray string_view_take_numbers(StringView str) {
 	DynArray arr = {0};
 	StringView current = {0};
 	bool in_number = false;
-	for (int i = 0; str.count > 0; ++i) {
+	for (; str.count > 0;) {
 		if (in_number) {
 			if (str.data[0] >= '0' && str.data[0] <= '9') {
 				current.count += 1;
@@ -208,7 +223,7 @@ DynArray string_view_parse_numbers(StringView str) {
 	DynArray arr = {0};
 	StringView current = {0};
 	bool in_number = false;
-	for (int i = 0; str.count > 0; ++i) {
+	for (; str.count > 0;) {
 		if (in_number) {
 			if (str.data[0] >= '0' && str.data[0] <= '9') {
 				current.count += 1;
@@ -259,7 +274,7 @@ DynArray string_view_parse_numbers_with_spaces(StringView str) {
 	StringView current = {0};
 	int num_spaces_in_number;
 	bool in_number = false;
-	for (int i = 0; str.count > 0; ++i) {
+	for (; str.count > 0;) {
 		if (in_number) {
 			if (str.data[0] >= '0' && str.data[0] <= '9') {
 				current.count += 1;
@@ -298,7 +313,7 @@ DynArray string_view_parse_numbers_with_spaces(StringView str) {
 DynArray string_view_take_symbols(StringView str) {
 	DynArray arr = {0};
 	StringView current = {0};
-	for (int i = 0; str.count > 0; ++i) {
+	for (; str.count > 0;) {
 		if (str.data[0] != '.' && !(str.data[0] >= '0' && str.data[0] <= '9')) {
 			current.data = str.data;
 			current.count = 1;

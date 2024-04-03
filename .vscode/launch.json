@@ -16,7 +16,15 @@
             "cwd": "${workspaceFolder}/2023/05",
             "environment": [],
             "externalConsole": false,
-            "MIMode": "gdb",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "MIMode": "lldb"
+            },
+            "linux": {
+                "MIMode": "gdb"
+            },
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
@@ -42,7 +50,15 @@
             "cwd": "${workspaceFolder}/2023/05",
             "environment": [],
             "externalConsole": false,
-            "MIMode": "gdb",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "MIMode": "lldb"
+            },
+            "linux": {
+                "MIMode": "gdb"
+            },
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
@@ -68,7 +84,15 @@
             "cwd": "${workspaceFolder}/2023/06",
             "environment": [],
             "externalConsole": false,
-            "MIMode": "gdb",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "MIMode": "lldb"
+            },
+            "linux": {
+                "MIMode": "gdb"
+            },
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
@@ -94,7 +118,15 @@
             "cwd": "${workspaceFolder}/2023/06",
             "environment": [],
             "externalConsole": false,
-            "MIMode": "gdb",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "MIMode": "lldb"
+            },
+            "linux": {
+                "MIMode": "gdb"
+            },
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
@@ -120,7 +152,15 @@
             "cwd": "${workspaceFolder}/2023/07",
             "environment": [],
             "externalConsole": false,
-            "MIMode": "gdb",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "MIMode": "lldb"
+            },
+            "linux": {
+                "MIMode": "gdb"
+            },
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
@@ -135,7 +175,7 @@
             ]
         },
         {
-            "name": "0502",
+            "name": "0702",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/2023/07/out/0702",
@@ -146,7 +186,15 @@
             "cwd": "${workspaceFolder}/2023/07",
             "environment": [],
             "externalConsole": false,
-            "MIMode": "gdb",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "MIMode": "lldb"
+            },
+            "linux": {
+                "MIMode": "gdb"
+            },
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
