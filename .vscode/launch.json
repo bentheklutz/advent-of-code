@@ -107,6 +107,58 @@
                     "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "name": "0701",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/2023/07/out/0701",
+            "args": [
+                "-e"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/2023/07",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "0502",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/2023/07/out/0702",
+            "args": [
+                "-e"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/2023/07",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
         }
     ]
 }
