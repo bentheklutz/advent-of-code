@@ -97,6 +97,15 @@ bool read_entire_file(const char *file_path, StringBuffer *buf) {
 	return result;
 }
 
+bool string_view_equal(StringView left, StringView right) {
+	if (left.count != right.count) { return false; }
+	if (left.data == right.data) { return true; }
+	for (size_t i = 0; i < left.count; i += 1) {
+		if (left.data[i] != right.data[i]) { return false; }
+	}
+	return true;
+}
+
 StringView string_view_trim_left(StringView str) {
 	StringView result = {0};
 	if (!str.data) { return result; }
