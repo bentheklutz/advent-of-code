@@ -12,13 +12,23 @@ func main() {
 	problem_one := `
 --- Day 2: Red-Nosed Reports ---
 
-Fortunately, the first location The Historians want to search isn't a long walk from the Chief Historian's office.
+Fortunately, the first location The Historians want to search isn't a long walk
+from the Chief Historian's office.
 
-While the Red-Nosed Reindeer nuclear fusion/fission plant appears to contain no sign of the Chief Historian, the engineers there run up to you as soon as they see you. Apparently, they still talk about the time Rudolph was saved through molecular synthesis from a single electron.
+While the Red-Nosed Reindeer nuclear fusion/fission plant appears to contain no
+sign of the Chief Historian, the engineers there run up to you as soon as they
+see you. Apparently, they still talk about the time Rudolph was saved through
+molecular synthesis from a single electron.
 
-They're quick to add that - since you're already here - they'd really appreciate your help analyzing some unusual data from the Red-Nosed reactor. You turn to check if The Historians are waiting for you, but they seem to have already divided into groups that are currently searching every corner of the facility. You offer to help with the unusual data.
+They're quick to add that - since you're already here - they'd really appreciate
+your help analyzing some unusual data from the Red-Nosed reactor. You turn
+to check if The Historians are waiting for you, but they seem to have already
+divided into groups that are currently searching every corner of the facility.
+You offer to help with the unusual data.
 
-The unusual data (your puzzle input) consists of many reports, one report per line. Each report is a list of numbers called levels that are separated by spaces. For example:
+The unusual data (your puzzle input) consists of many reports, one report per
+line. Each report is a list of numbers called levels that are separated by
+spaces. For example:
 
 7 6 4 2 1
 1 2 7 8 9
@@ -29,7 +39,10 @@ The unusual data (your puzzle input) consists of many reports, one report per li
 
 This example data contains six reports each containing five levels.
 
-The engineers are trying to figure out which reports are safe. The Red-Nosed reactor safety systems can only tolerate levels that are either gradually increasing or gradually decreasing. So, a report only counts as safe if both of the following are true:
+The engineers are trying to figure out which reports are safe. The Red-Nosed
+reactor safety systems can only tolerate levels that are either gradually
+increasing or gradually decreasing. So, a report only counts as safe if both of
+the following are true:
 
     The levels are either all increasing or all decreasing.
     Any two adjacent levels differ by at least one and at most three.
@@ -45,17 +58,20 @@ In the example above, the reports can be found safe or unsafe by checking those 
 
 So, in this example, 2 reports are safe.
 
-Analyze the unusual data from the engineers. How many reports are safe?
-`
+Analyze the unusual data from the engineers. How many reports are safe?`
 
 	problem_two := `
 --- Part Two ---
 
-The engineers are surprised by the low number of safe reports until they realize they forgot to tell you about the Problem Dampener.
+The engineers are surprised by the low number of safe reports until they realize
+they forgot to tell you about the Problem Dampener.
 
-The Problem Dampener is a reactor-mounted module that lets the reactor safety systems tolerate a single bad level in what would otherwise be a safe report. It's like the bad level never happened!
+The Problem Dampener is a reactor-mounted module that lets the reactor safety
+systems tolerate a single bad level in what would otherwise be a safe report.
+It's like the bad level never happened!
 
-Now, the same rules apply as before, except if removing a single level from an unsafe report would make it safe, the report instead counts as safe.
+Now, the same rules apply as before, except if removing a single level from an
+unsafe report would make it safe, the report instead counts as safe.
 
 More of the above example's reports are now safe:
 
@@ -68,8 +84,8 @@ More of the above example's reports are now safe:
 
 Thanks to the Problem Dampener, 4 reports are actually safe!
 
-Update your analysis by handling situations where the Problem Dampener can remove a single level from unsafe reports. How many reports are now safe?
-	`
+Update your analysis by handling situations where the Problem Dampener can
+remove a single level from unsafe reports. How many reports are now safe?`
 
 	var file_name string
 	have_file_name := false
@@ -106,7 +122,6 @@ Update your analysis by handling situations where the Problem Dampener can remov
 		os.Exit(1)
 	}
 
-	fmt.Fprintf(os.Stderr, "The file's size is %d\n", file_info.Size())
 	contents := make([]byte, file_info.Size())
 	bytes_read, err := file.Read(contents)
 	if err != nil {
@@ -119,42 +134,16 @@ Update your analysis by handling situations where the Problem Dampener can remov
 	}
 
 	lines := strings.Split(string(contents), "\n")
-
 	lines = lines[:len(lines)-1]
 
-	input_good := true
-	num_safe_reports := 0
-	nums := make([][]int, len(lines))
-	for i, line := range lines {
-		num_strings := strings.Split(line, " ")
-		nums[i] = make([]int, len(num_strings))
-		for j, num_string := range num_strings {
-			nums[i][j], err = strconv.Atoi(num_string)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to parse num_string '%s' into an int for processing. The error is %s.\n", num_string, err.Error())
-				input_good = false
-			}
-		}
-	}
-	if !input_good {
-		os.Exit(1)
-	}
-
+	nums := extractNumbers(lines)
 	/*
 		Part One
 		A Report is safe when:
 		1) All numbers are either increasing or decreasing
 		2) The difference between each pair of numbers is no greater than 3.
 	*/
-	for i := 0; i < len(lines); i++ {
-		report_safe := reportSafe(nums[i])
-		if report_safe {
-			fmt.Fprintf(os.Stderr, "Line %d (%s): Safe\n", i+1, lines[i])
-			num_safe_reports += 1
-		} else {
-			fmt.Fprintf(os.Stderr, "Line %d (%s): Unsafe\n", i+1, lines[i])
-		}
-	}
+	num_safe_reports := countSafeReports(nums)
 	fmt.Printf("Part One: The program determined that %d reports were safe.\n", num_safe_reports)
 
 	/*
@@ -162,21 +151,34 @@ Update your analysis by handling situations where the Problem Dampener can remov
 		If removing a single element makes the report safe, then the report is now safe.
 		Otherwise, the same rules apply as before.
 	*/
-	num_safe_reports = 0
+	num_safe_reports = countSafeReportsWithTolerance(nums)
+
+	fmt.Printf("Part Two: The program determined that %d reports were safe.\n", num_safe_reports)
+}
+
+func countSafeReports(nums [][]int) int {
+	num_safe_reports := 0
+	for i := 0; i < len(nums); i++ {
+		report_safe := reportSafe(nums[i])
+		if report_safe {
+			num_safe_reports += 1
+		}
+	}
+	return num_safe_reports
+}
+
+func countSafeReportsWithTolerance(nums [][]int) int {
+	num_safe_reports := 0
 	retries := make([]int, 0)
-	for i := 0; i < len(lines); i++ {
+	for i := 0; i < len(nums); i++ {
 		report_safe := reportSafe(nums[i])
 
 		if report_safe {
-			fmt.Fprintf(os.Stderr, "Line %d (%s): Safe\n", i+1, lines[i])
 			num_safe_reports += 1
 		} else {
 			retries = append(retries, i)
-			fmt.Fprintf(os.Stderr, "Line %d (%s): Unsafe\n", i+1, lines[i])
 		}
 	}
-
-	fmt.Fprintf(os.Stderr, "We have %d lines to retry.\n", len(retries))
 
 	for len(retries) > 0 {
 		retrying := nums[retries[0]]
@@ -191,8 +193,24 @@ Update your analysis by handling situations where the Problem Dampener can remov
 		}
 		retries = retries[1:]
 	}
+	return num_safe_reports
+}
 
-	fmt.Printf("Part Two: The program determined that %d reports were safe.\n", num_safe_reports)
+func extractNumbers(lines []string) [][]int {
+	nums := make([][]int, len(lines))
+	for i, line := range lines {
+		num_strings := strings.Split(line, " ")
+		nums[i] = make([]int, len(num_strings))
+		for j, num_string := range num_strings {
+			num, err := strconv.Atoi(num_string)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Line %d: The program could not convert '%s' into an int for processing. The error is %s.\n", i+1, num_string, err.Error())
+				os.Exit(1)
+			}
+			nums[i][j] = num
+		}
+	}
+	return nums
 }
 
 func reportSafe(numbers []int) bool {
