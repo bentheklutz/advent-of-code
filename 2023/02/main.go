@@ -199,4 +199,52 @@ is the sum of the power of these sets?`
 	}
 
 	fmt.Printf("The sum of all valid game IDs is %d.\n", sum)
+
+	power_sum := 0
+
+	for i := 0; i < len(lines); i++ {
+		line := lines[i]
+		gid_game := strings.Split(line, ":")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Could not parse the game ID %s.\n", gid_game[0])
+			os.Exit(1)
+		}
+		game := strings.TrimLeft(gid_game[1], " ")
+		rounds := strings.Split(game, ";")
+		most_green := 0
+		most_red := 0
+		most_blue := 0
+		for j := 0; j < len(rounds); j++ {
+			pulls := strings.Split(rounds[j], ",")
+			for k := 0; k < len(pulls); k++ {
+				number_and_color := strings.Split(strings.TrimLeft(pulls[k], " "), " ")
+				num_marbles, err := strconv.Atoi(number_and_color[0])
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Line %d is malformed. %s is not a number.\n", i+1, number_and_color[0])
+					os.Exit(1)
+				}
+				color := number_and_color[1]
+				switch color {
+				case "blue":
+					if num_marbles > most_blue {
+						most_blue = num_marbles
+					}
+				case "red":
+					if num_marbles > most_red {
+						most_red = num_marbles
+					}
+				case "green":
+					if num_marbles > most_green {
+						most_green = num_marbles
+					}
+				default:
+					fmt.Fprintf(os.Stderr, "'%s' is not a valid color.\n", color)
+				}
+			}
+		}
+		// fmt.Fprintf(os.Stderr, "Game %d requires %d red, %d blue, and %d green marbles.\n", game_id, total_red, total_blue, total_green)
+		power_score := most_green * most_blue * most_red
+		power_sum += power_score
+	}
+	fmt.Printf("The sum of all power scores is %d.\n", power_sum)
 }
