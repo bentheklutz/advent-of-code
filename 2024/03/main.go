@@ -41,8 +41,8 @@ Only the four highlighted sections are real mul instructions. Adding up the
 result of each instruction produces 161 (2*4 + 5*5 + 11*8 + 8*5).
 
 Scan the corrupted memory for uncorrupted mul instructions. What do you get if
-you add up all of the results of the multiplications?
-	`
+you add up all of the results of the multiplications?`
+
 	problem_two := `
 --- Part Two ---
 
@@ -93,8 +93,7 @@ just the enabled multiplications?`
 	}
 
 	if !have_file_name {
-		fmt.Fprintf(os.Stderr, "%s\n", problem_one)
-		fmt.Fprintf(os.Stderr, "%s\n\n", problem_two)
+		fmt.Fprintf(os.Stderr, "%s\n%s\n\n", problem_one, problem_two)
 		fmt.Fprintf(os.Stderr, "Usage: %s [-p] [-i <file_path>]\n", os.Args[0])
 		return
 	}
@@ -120,64 +119,112 @@ just the enabled multiplications?`
 		os.Exit(1)
 	}
 
-	mul_regex := regexp.MustCompile(`mul\([0-9][0-9]?[0-9]?,[0-9][0-9]?[0-9]?\)`)
-	multiplies := mul_regex.FindAllString(string(contents), -1)
+	multiplies := extractMultiplies(string(contents))
 
-	fmt.Fprintf(os.Stderr, "There are %d valid mul instructions in the input.\n", len(multiplies))
-
-	var sum int64 = 0
-	for i := 0; i < len(multiplies); i++ {
-		mul := multiplies[i]
-		mul_args := strings.Split(strings.TrimSuffix(strings.TrimPrefix(mul, "mul("), ")"), ",")
-		first, err := strconv.Atoi(mul_args[0])
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Malformed input in argument conversion. Double check the instruction match regex.\nThe error is %s.\n", err.Error())
-			os.Exit(1)
-		}
-		second, err := strconv.Atoi(mul_args[1])
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Malformed input in argument conversion. Double check the instruction match regex.\nThe error is %s.\n", err.Error())
-			os.Exit(1)
-		}
-		instruction_value := first * second
-		fmt.Fprintf(os.Stderr, "%s -> %d\n", mul, instruction_value)
-		sum += int64(instruction_value)
+	var sum int = 0
+	for _, mul := range multiplies {
+		sum += mul.left * mul.right
 	}
-	fmt.Fprintf(os.Stdout, "The input contains %d mul instructions whose total values accumulate to %d.\n", len(multiplies), sum)
 
-	instruction_regex := regexp.MustCompile(`(mul\([0-9][0-9]?[0-9]?,[0-9][0-9]?[0-9]?\)|do\(\)|don't\(\))`)
-	instructions := instruction_regex.FindAllString(string(contents), -1)
-
-	fmt.Fprintf(os.Stderr, "There are %d instructions.\n", len(instructions))
+	fmt.Fprintf(os.Stdout, "The input contains %d total mul instructions whose total values accumulate to %d.\n", len(multiplies), sum)
 
 	do_multiply := true
 	sum = 0
 	total_muls := 0
-	for i := 0; i < len(instructions); i++ {
-		instruction := instructions[i]
-		if instruction == "do()" {
+	instructions := extractInstructions(string(contents))
+	for _, instruction := range instructions {
+		if instruction.name() == "do" {
 			do_multiply = true
-			fmt.Fprintf(os.Stderr, "Multiply is now on.\n")
-		} else if instruction == "don't()" {
+		} else if instruction.name() == "don't" {
 			do_multiply = false
-			fmt.Fprintf(os.Stderr, "Multiply is now off.\n")
 		} else if do_multiply {
 			total_muls += 1
-			mul_args := strings.Split(strings.TrimSuffix(strings.TrimPrefix(instruction, "mul("), ")"), ",")
-			first, err := strconv.Atoi(mul_args[0])
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Malformed input in argument conversion. Double check the instruction match regex.\nThe error is %s.\n", err.Error())
-				os.Exit(1)
-			}
-			second, err := strconv.Atoi(mul_args[1])
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Malformed input in argument conversion. Double check the instruction match regex.\nThe error is %s.\n", err.Error())
-				os.Exit(1)
-			}
-			instruction_value := first * second
-			fmt.Fprintf(os.Stderr, "%s -> %d\n", instruction, instruction_value)
-			sum += int64(instruction_value)
+			sum += instruction.compute()
 		}
 	}
-	fmt.Fprintf(os.Stdout, "The input contains %d mul instructions whose total values accumulate to %d.\n", total_muls, sum)
+	fmt.Fprintf(os.Stdout, "The input contains %d active mul instructions whose total values accumulate to %d.\n", total_muls, sum)
+}
+
+func extractInstructions(input string) []instruction {
+	instruction_regex := regexp.MustCompile(`(mul\([0-9][0-9]?[0-9]?,[0-9][0-9]?[0-9]?\)|do\(\)|don't\(\))`)
+	instruction_strs := instruction_regex.FindAllString(input, -1)
+	instructions := make([]instruction, len(instruction_strs))
+	for i := 0; i < len(instruction_strs); i++ {
+		instruction := instruction_strs[i]
+		if instruction == "do()" {
+			instructions[i] = &do{}
+		} else if instruction == "don't()" {
+			instructions[i] = &dont{}
+		} else {
+			mul_args := strings.Split(strings.TrimSuffix(strings.TrimPrefix(instruction, "mul("), ")"), ",")
+			left, err := strconv.Atoi(mul_args[0])
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Malformed input in argument conversion. Double check the instruction match regex.\nThe error is %s.\n", err.Error())
+				os.Exit(1)
+			}
+			right, err := strconv.Atoi(mul_args[1])
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Malformed input in argument conversion. Double check the instruction match regex.\nThe error is %s.\n", err.Error())
+				os.Exit(1)
+			}
+			instructions[i] = &multiply{left, right}
+		}
+	}
+	return instructions
+}
+
+func extractMultiplies(input string) []multiply {
+	mul_regex := regexp.MustCompile(`mul\([0-9][0-9]?[0-9]?,[0-9][0-9]?[0-9]?\)`)
+	multiply_strs := mul_regex.FindAllString(input, -1)
+	multiplies := make([]multiply, 0)
+	for i := 0; i < len(multiply_strs); i++ {
+		mul := multiply_strs[i]
+		mul_args := strings.Split(strings.TrimSuffix(strings.TrimPrefix(mul, "mul("), ")"), ",")
+		left, err := strconv.Atoi(mul_args[0])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Malformed input in argument conversion. Double check the instruction match regex.\nThe error is %s.\n", err.Error())
+			os.Exit(1)
+		}
+		right, err := strconv.Atoi(mul_args[1])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Malformed input in argument conversion. Double check the instruction match regex.\nThe error is %s.\n", err.Error())
+			os.Exit(1)
+		}
+		multiplies = append(multiplies, multiply{left, right})
+	}
+	return multiplies
+}
+
+type instruction interface {
+	name() string
+	compute() int
+}
+
+type multiply struct {
+	left, right int
+}
+
+func (m *multiply) name() string {
+	return "mul"
+}
+func (m *multiply) compute() int {
+	return m.left * m.right
+}
+
+type do struct{}
+
+func (d *do) name() string {
+	return "do"
+}
+func (d *do) compute() int {
+	return 0
+}
+
+type dont struct{}
+
+func (d *dont) name() string {
+	return "don't"
+}
+func (d *dont) compute() int {
+	return 0
 }
