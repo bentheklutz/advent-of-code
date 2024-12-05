@@ -249,20 +249,43 @@ up the middle page numbers after correctly ordering just those updates?`
 		orderings = append(orderings, order)
 	}
 
-	sum := sumCorrectOrderings(rules, orderings)
-	fmt.Printf("The sum of the middle pages in all valid print orderings is %d.\n", sum)
+	valids, invalids := findOrderValidities(rules, orderings)
+	valid_sum := 0
+	for _, order := range valids {
+		valid_sum += order[len(order)/2]
+	}
+	fmt.Printf("The sum of the middle pages in all valid print orderings is %d.\n", valid_sum)
 
-	sum = fixAndSumIncorrectOrderings(rules, orderings)
-	fmt.Printf("The sum of the middle pages in all invalid print orderings after being fixed is %d.\n", sum)
+	// Construct a sort function based on the rules, then sort each order using it.
+
+	sortFromRules := func(l, r int) int {
+		for _, rule := range rules {
+			if rule.before == l && rule.after == r {
+				return -1
+			}
+			if rule.after == l && rule.before == r {
+				return 1
+			}
+		}
+		fmt.Fprintf(os.Stderr, "Failed to sort the invalid slice based on the rules.\n")
+		os.Exit(1)
+		return 0
+	}
+
+	invalid_sum := 0
+	for i := 0; i < len(invalids); i++ {
+		order := invalids[i]
+		slices.SortFunc(order, sortFromRules)
+		invalid_sum += order[len(order)/2]
+	}
+
+	fmt.Printf("The sum of the middle pages in all invalid print orderings after being fixed is %d.\n", invalid_sum)
 
 }
 
-func fixAndSumIncorrectOrderings(rules []rule, orderings [][]int) int {
-	return 0
-}
-
-func sumCorrectOrderings(rules []rule, orderings [][]int) int {
-	sum := 0
+func findOrderValidities(rules []rule, orderings [][]int) ([][]int, [][]int) {
+	valids := make([][]int, 0)
+	invalids := make([][]int, 0)
 	for i := 0; i < len(orderings); i++ {
 		order := orderings[i]
 
@@ -283,11 +306,12 @@ func sumCorrectOrderings(rules []rule, orderings [][]int) int {
 			}
 		}
 		if valid {
-			middle_number := order[len(order)/2]
-			sum += middle_number
+			valids = append(valids, order)
+		} else {
+			invalids = append(invalids, order)
 		}
 	}
-	return sum
+	return valids, invalids
 }
 
 type rule struct {
