@@ -256,8 +256,6 @@ up the middle page numbers after correctly ordering just those updates?`
 	}
 	fmt.Printf("The sum of the middle pages in all valid print orderings is %d.\n", valid_sum)
 
-	// Construct a sort function based on the rules, then sort each order using it.
-
 	sortFromRules := func(l, r int) int {
 		for _, rule := range rules {
 			if rule.before == l && rule.after == r {
