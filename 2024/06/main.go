@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 )
 
 func main() {
@@ -285,183 +284,12 @@ How many different positions could you choose for this obstruction?`
 		os.Exit(1)
 	}
 
-	lines := strings.Split(string(contents), "\n")
-	lines = lines[:len(lines)-1]
-
-	for i := 1; i < len(lines); i++ {
-		if len(lines[i]) != len(lines[i-1]) {
-			fmt.Fprintf(os.Stderr, "Line %d: The input map is not a square. This may be problematic.\n", i+1)
-			os.Exit(1)
-		}
+	sim, err := simFromInput(contents)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 	}
 
-	guard_direction := up
-	guard_pos := vec2{}
-	guard_found := false
+	sim.simulate()
+	fmt.Printf("The guard visited %d distinct places in the lab before exiting.\n", sim.count_visited_spaces())
 
-	obstacles := make([]vec2, 0)
-	for i := 0; i < len(lines); i++ {
-		line := lines[i]
-		for j := 0; j < len(line); j++ {
-			pos := vec2{j, i}
-			if line[j] == '#' {
-				obstacles = append(obstacles, pos)
-			}
-			if line[j] == '^' {
-				guard_pos.x = j
-				guard_pos.y = i
-				guard_found = true
-			}
-		}
-	}
-
-	if !guard_found {
-		fmt.Fprintf(os.Stderr, "The input did not contain a guard '^'. The program cannot proceed.\n")
-		os.Exit(1)
-	}
-
-	width := len(lines[0])
-	height := len(lines)
-	guard_in_room_test := func(pos vec2) bool {
-		return pos.x >= 0 && pos.x < width && pos.y >= 0 && pos.y < height
-	}
-
-	obstructed_test := func(pos vec2) bool {
-		for _, obstacle := range obstacles {
-			if pos == obstacle {
-				return true
-			}
-		}
-		return false
-	}
-
-	// initial_guard_pos := guard_pos
-	visited_set := make(map[vec2]direction)
-	guard_in_room := true
-	obstructed := false
-	for {
-		var next_pos vec2
-		switch guard_direction {
-		case up:
-			next_pos = vec2{guard_pos.x, guard_pos.y - 1}
-			guard_in_room = guard_in_room_test(next_pos)
-			obstructed = obstructed_test(next_pos)
-		case down:
-			next_pos = vec2{guard_pos.x, guard_pos.y + 1}
-			guard_in_room = guard_in_room_test(next_pos)
-			obstructed = obstructed_test(next_pos)
-		case left:
-			next_pos = vec2{guard_pos.x - 1, guard_pos.y}
-			guard_in_room = guard_in_room_test(next_pos)
-			obstructed = obstructed_test(next_pos)
-		case right:
-			next_pos = vec2{guard_pos.x + 1, guard_pos.y}
-			guard_in_room = guard_in_room_test(next_pos)
-			obstructed = obstructed_test(next_pos)
-		}
-		if !guard_in_room {
-			break
-		}
-		if obstructed {
-			switch guard_direction {
-			case up:
-				guard_direction = right
-			case down:
-				guard_direction = left
-			case left:
-				guard_direction = up
-			case right:
-				guard_direction = down
-			}
-		} else {
-			visited_set[next_pos] = guard_direction
-			guard_pos = next_pos
-		}
-	}
-
-	// The guard has obviously visited the place they started...
-	num_visited := 1
-	visited := make([]vec2, 0)
-	visited_directions := make([]direction, 0)
-	for p, d := range visited_set {
-		num_visited++
-		visited = append(visited, p)
-		visited_directions = append(visited_directions, d)
-	}
-
-	// fmt.Fprintf(os.Stderr, "%s\n\n", string(printMap(width, height, obstacles, initial_guard_pos, visited, visited_directions, guard_pos, guard_direction)))
-
-	fmt.Printf("The guard visited %d distinct places in the lab before exiting.\n", num_visited)
-}
-
-func printMap(width, height int, obstacles []vec2, initial_guard_pos vec2, visited []vec2, visited_directions []direction, guard_pos vec2, guard_direction direction) []byte {
-	output := make([]byte, (width+1)*height)
-	for i := 0; i < len(output); i++ {
-		output[i] = '.'
-	}
-
-	for i := width; i < len(output); i += width + 1 {
-		output[i] = '\n'
-	}
-
-	for i, p := range visited {
-		switch visited_directions[i] {
-		case up:
-			output[p.x+p.y*(width+1)] = '|'
-		case down:
-			output[p.x+p.y*(width+1)] = '|'
-		case left:
-			output[p.x+p.y*(width+1)] = '-'
-		case right:
-			output[p.x+p.y*(width+1)] = '-'
-		}
-	}
-	for _, p := range obstacles {
-		output[p.x+p.y*(width+1)] = '#'
-	}
-
-	switch guard_direction {
-	case up:
-		output[guard_pos.x+guard_pos.y*(width+1)] = '^'
-	case down:
-		output[guard_pos.x+guard_pos.y*(width+1)] = 'V'
-	case left:
-		output[guard_pos.x+guard_pos.y*(width+1)] = '<'
-	case right:
-		output[guard_pos.x+guard_pos.y*(width+1)] = '>'
-	}
-	output[initial_guard_pos.x+initial_guard_pos.y*(width+1)] = 'S'
-	return output
-}
-
-type direction int
-
-const (
-	unknown direction = iota
-	up
-	down
-	left
-	right
-)
-
-func rightFrom(d direction) direction {
-	switch d {
-	case up:
-		return right
-	case down:
-		return left
-	case left:
-		return up
-	case right:
-		return down
-	}
-	return unknown
-}
-
-type vec2 struct {
-	x, y int
-}
-
-func (v vec2) String() string {
-	return fmt.Sprintf("(%d, %d)", v.x, v.y)
 }
