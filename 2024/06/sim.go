@@ -2,17 +2,31 @@ package main
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
 type guard_sim struct {
 	width, height           int
 	obstacles               []vec2
-	guard_initial_postion   vec2
+	guard_initial_position  vec2
 	guard_position          vec2
 	guard_initial_direction direction
 	guard_direction         direction
 	events                  []event
+}
+
+func (sim *guard_sim) copy() guard_sim {
+	copy := guard_sim{}
+	copy.width = sim.width
+	copy.height = sim.height
+	copy.obstacles = slices.Clone(sim.obstacles)
+	copy.guard_initial_position = sim.guard_initial_position
+	copy.guard_position = sim.guard_initial_position
+	copy.guard_initial_direction = sim.guard_initial_direction
+	copy.guard_direction = sim.guard_initial_direction
+	copy.events = make([]event, 0)
+	return copy
 }
 
 type vec2 struct {
@@ -62,7 +76,7 @@ func rightFrom(d direction) direction {
 }
 
 type event struct {
-	event_type      event_type
+	type_           event_type
 	start_position  vec2
 	end_position    vec2
 	start_direction direction
@@ -78,7 +92,58 @@ const (
 	et_exit
 )
 
-func simFromInput(contents []byte) (guard_sim, error) {
+func (sim *guard_sim) String() string {
+	output := make([]byte, (sim.width+1)*sim.height)
+	for i := 0; i < len(output); i++ {
+		output[i] = '.'
+	}
+	for i := sim.width; i < len(output); i += sim.width + 1 {
+		output[i] = '\n'
+	}
+	for _, p := range sim.obstacles {
+		output[p.x+p.y*(sim.width+1)] = '#'
+	}
+
+	for i := 0; i < len(sim.events); i++ {
+		event := sim.events[i]
+		p := event.start_position
+		if event.type_ == et_turn {
+			output[p.x+p.y*(sim.width+1)] = '+'
+		}
+		if event.type_ == et_step {
+			if i > 0 && sim.events[i-1].type_ == et_turn {
+				// don't overwrite the '+' from the turn
+				continue
+			}
+			switch event.start_direction {
+			case up:
+				fallthrough
+			case down:
+				output[p.x+p.y*(sim.width+1)] = '|'
+			case left:
+				fallthrough
+			case right:
+				output[p.x+p.y*(sim.width+1)] = '-'
+			}
+		}
+	}
+	output[sim.guard_initial_position.x+sim.guard_initial_position.y*(sim.width+1)] = 'S'
+	if sim.guard_position != sim.guard_initial_position {
+		switch sim.guard_direction {
+		case up:
+			output[sim.guard_position.x+sim.guard_position.y*(sim.width+1)] = '^'
+		case down:
+			output[sim.guard_position.x+sim.guard_position.y*(sim.width+1)] = 'V'
+		case left:
+			output[sim.guard_position.x+sim.guard_position.y*(sim.width+1)] = '<'
+		case right:
+			output[sim.guard_position.x+sim.guard_position.y*(sim.width+1)] = '>'
+		}
+	}
+	return string(output)
+}
+
+func newSimFromInput(contents []byte) (guard_sim, error) {
 	lines := strings.Split(string(contents), "\n")
 	lines = lines[:len(lines)-1]
 
@@ -90,6 +155,8 @@ func simFromInput(contents []byte) (guard_sim, error) {
 	sim := guard_sim{}
 	sim.guard_direction = up
 	sim.guard_position = vec2{}
+	sim.guard_initial_position = vec2{}
+	sim.guard_initial_direction = up
 	sim.obstacles = make([]vec2, 0)
 	sim.width = len(lines[0])
 	sim.height = len(lines)
@@ -105,6 +172,8 @@ func simFromInput(contents []byte) (guard_sim, error) {
 			if line[j] == '^' {
 				sim.guard_position.x = j
 				sim.guard_position.y = i
+				sim.guard_initial_position.x = j
+				sim.guard_initial_position.y = i
 				guard_found = true
 			}
 		}
@@ -131,13 +200,20 @@ func (sim *guard_sim) guard_in_room(pos vec2) bool {
 }
 
 func (sim *guard_sim) guard_exited() bool {
-	return len(sim.events) > 0 && sim.events[len(sim.events)-1].event_type == et_exit
+	return len(sim.events) > 0 && sim.events[len(sim.events)-1].type_ == et_exit
 }
 
 func (sim *guard_sim) reset() {
 	sim.guard_direction = sim.guard_initial_direction
-	sim.guard_position = sim.guard_initial_postion
+	sim.guard_position = sim.guard_initial_position
 	sim.events = sim.events[:0]
+}
+
+func (sim *guard_sim) lastEvent() event {
+	if len(sim.events) == 0 {
+		return event{}
+	}
+	return sim.events[len(sim.events)-1]
 }
 
 func (sim *guard_sim) step() {

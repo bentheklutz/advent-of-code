@@ -284,7 +284,7 @@ How many different positions could you choose for this obstruction?`
 		os.Exit(1)
 	}
 
-	sim, err := simFromInput(contents)
+	sim, err := newSimFromInput(contents)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 	}
@@ -292,4 +292,55 @@ How many different positions could you choose for this obstruction?`
 	sim.simulate()
 	fmt.Printf("The guard visited %d distinct places in the lab before exiting.\n", sim.count_visited_spaces())
 
+	if len(sim.events) < 2 {
+		fmt.Printf("The sim's path must be at least 2 events long to try new obstacle placements.\n")
+		os.Exit(1)
+	}
+
+	new_obstacles := make(map[vec2]bool, 0)
+	for _, current_event := range sim.events {
+		if current_event.type_ == et_exit {
+			break
+		}
+		if current_event.type_ != et_step {
+			continue
+		}
+		trial_sim := sim.copy()
+		trial_sim.obstacles = append(trial_sim.obstacles, current_event.end_position)
+		// fmt.Fprintf(os.Stderr, "Trying to see if the following configuration creates an infinite loop:\n%s\n\n", &trial_sim)
+		turns := make(map[event]bool, 0)
+		loop_detected := false
+		for {
+			trial_sim.step()
+			e := trial_sim.lastEvent()
+			if e.type_ == et_turn {
+				if turns[e] {
+					loop_detected = true
+					break
+				} else {
+					turns[e] = true
+				}
+			}
+			if trial_sim.guard_exited() {
+				break
+			}
+		}
+		if loop_detected {
+			fmt.Fprintf(os.Stderr, "LOOP DETECTED:\n%s\n", &trial_sim)
+			new_obstacles[current_event.end_position] = true
+		}
+	}
+
+	num_new_obstacles := 0
+	for range new_obstacles {
+		num_new_obstacles++
+	}
+
+	fmt.Fprintf(os.Stderr, "There are %d candidate positions.\n", num_new_obstacles)
+
+}
+
+type encounter struct {
+	position  vec2
+	direction direction
 }
