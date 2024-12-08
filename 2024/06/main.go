@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+
 	"os"
+	"time"
 )
 
 func main() {
@@ -297,6 +299,8 @@ How many different positions could you choose for this obstruction?`
 		os.Exit(1)
 	}
 
+	start_time := time.Now()
+
 	new_obstacles := make(map[vec2]bool, 0)
 	for _, current_event := range sim.events {
 		if current_event.type_ == et_exit {
@@ -336,7 +340,7 @@ How many different positions could you choose for this obstruction?`
 		num_new_obstacles++
 	}
 
-	fmt.Fprintf(os.Stderr, "There are %d candidate positions.\n", num_new_obstacles)
+	fmt.Fprintf(os.Stdout, "It took %.3fs to determine that There are %d candidate positions.\n", time.Now().Sub(start_time).Seconds(), num_new_obstacles)
 
 }
 
